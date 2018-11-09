@@ -1,2 +1,8 @@
 #Ignore grammar file
 *.grm
+#Ignore temporary files
+*.lua.c
+*.grm.*
+#Ignore main executable file
+main
+*.exe

@@ -1,3 +1,4 @@
+unpack = unpack or table.unpack
 local ParserBNF = {}
 
 ParserBNF.__index = ParserBNF
@@ -5,9 +6,11 @@ ParserBNF.__index = ParserBNF
 function ParserBNF:new(filename)
     local this = {
         filename = filename,
+        empty = {""},
         lexemes = {},
         tokens = {},
-        info = {}
+        info = {},
+        productions = {}
     }
 
     return setmetatable(this, ParserBNF)
@@ -45,7 +48,6 @@ function ParserBNF:lexemesInTokenLines()
     for index = 1, #self.lexemes do
         if self.lexemes[index] == "$" then
             if "|" ~= self.lexemes[index + 1] then
-                print(lineCounter, unpack(self.tokens[lineCounter]))
                 lineCounter = lineCounter + 1
                 self.tokens[lineCounter] = {}
             end
@@ -53,6 +55,7 @@ function ParserBNF:lexemesInTokenLines()
             table.insert(self.tokens[lineCounter], self.lexemes[index])
         end
     end
+    if #self.tokens[lineCounter] == 0 then self.tokens[lineCounter] = nil end
 end
 
 function ParserBNF:getTokens(line)
@@ -91,6 +94,49 @@ function ParserBNF:getTokens(line)
     table.insert(self.lexemes, "$")
 end
 
+function ParserBNF:extractLines()
+    for line, tokenLine in pairs(self.tokens) do
+        if tokenLine[1]:match("[\", \'].*[\", \']") then
+            if tokenLine[2] == "=" then
+                local name = string.sub(tokenLine[1], 2, #tokenLine[1] - 1)
+                self.info[name] = #tokenLine > 3 and {} or tokenLine[3]
+                if #tokenLine > 3 then
+                    for index = 3, #tokenLine do
+                        table.insert(self.info[name], tokenLine[index])
+                    end
+                end
+            else
+                error("When setting a info, a equal(=) symbol is needed")
+            end
+        elseif tokenLine[1]:match("<.*>") then
+            assert(tokenLine[2] == "::=", string.format("The symbol \"::=\" is needed to indicate a production. \"%s\" are given", tokenLine[2]))
+            self.productions[tokenLine[1]] = {}
+            local production = {}
+            for index = 3, #tokenLine do
+                if tokenLine[index] == "|" then
+                    if #production > 0 then
+                        table.insert(self.productions[tokenLine[1]], production)
+                        production = {}
+                    end
+                else
+                    table.insert(production, tokenLine[index])
+                end
+            end
+            if #production > 0 then table.insert(self.productions[tokenLine[1]], production) end
+            if tokenLine[#tokenLine] == "|" then table.insert(self.productions[tokenLine[1]], self.empty) end
+        end
+    end
+    if not self.info["Start Symbol"] then error("Start Symbol not set") end
+end
+
+function ParserBNF:generateFirst()
+    for index, value in pairs(self.productions) do
+        for _, production in pairs(value) do
+            print(index, unpack(production))
+        end
+    end
+end
+
 function ParserBNF:parse()
     for line in io.lines(self.filename) do
         line = self:removeComment(line:gsub(string.format("%s%s%s", string.char(239), string.char(187), string.char(191)), ""))
@@ -99,6 +145,8 @@ function ParserBNF:parse()
         end
     end
     self:lexemesInTokenLines()
+    self:extractLines()
+    self:generateFirst()
 end
 
 return ParserBNF
