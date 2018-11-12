@@ -23,12 +23,14 @@ end
 
 local parserBNF = require "controllers.ParserBNF":new(filename)
 parserBNF:parse()
+local firstGenerator = require "controllers.FirstGenerator":new(parserBNF.productions)
+firstGenerator:start()
 
 local function writeFile(extension)
     local generators = {java = "GenerateJava", py = "GeneratePython", lua = "GenerateLua"}
     assert(generators[extension], string.format("Extension gived \"%s\" isn't valid", extension))
     local file = io.open(string.format("%s.%s", filename, extension), "w")
-    local generator = require("models.business." .. generators[extension]):new(file, parserBNF.info, parserBNF.first, parserBNF.follow)
+    local generator = require("models.business." .. generators[extension]):new(file, parserBNF.info, firstGenerator.first, parserBNF.follow)
     generator:write(parserBNF.productions)
 end
 
@@ -37,3 +39,5 @@ for flag, argument in pairs(flags) do
         writeFile(argument)
     end
 end
+
+if not flags["--l"] then writeFile("lua") end

@@ -16,10 +16,13 @@ end
 
 function GenerateLua:writeTable(table, tabCharacter, first)
 	self.file:write("{\n")
-	for key, value in pairs(table) do
+    for key, value in pairs(table) do
+        if type(key) == "number" then key = string.format("[%d]", key)
+        elseif key:match("<.*>") then key = string.format("[\"%s\"]", key)
+        elseif key:match("\'.*\'") then key = string.format("[%s]", key:gsub("'", "\""))
+        else key = key:gsub("%s+", "") end
 		if type(value) == "table" then
             if type(key) == "string" then
-                if key:match("<.*>") then key = string.format("[\"%s\"]", key) else key = key:gsub("%s+", "") end
 				self.file:write(tabCharacter .. "\t" .. key:gsub("%..*", "") .. " = ")
 			end
 			self:writeTable(value, tabCharacter .. "\t")
@@ -28,8 +31,6 @@ function GenerateLua:writeTable(table, tabCharacter, first)
 			if type(value) == "string" then
 				writeValue = string.format("\"%s\"", value)
             end
-            if type(key) == "number" then key = string.format("[%d]", key)
-            elseif key:match("<.*>") then key = string.format("[\"%s\"]", key) else key = key:gsub("%s+", "") end
 			self.file:write(tabCharacter .. "\t" .. string.format("%s = %s,\n", tostring(key), tostring(writeValue)))
 		end
 	end

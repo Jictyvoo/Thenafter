@@ -129,14 +129,6 @@ function ParserBNF:extractLines()
     if not self.info["Start Symbol"] then error("Start Symbol not set") end
 end
 
-function ParserBNF:generateFirst()
-    for index, value in pairs(self.productions) do
-        for _, production in pairs(value) do
-            print(index, unpack(production))
-        end
-    end
-end
-
 function ParserBNF:parse()
     for line in io.lines(self.filename) do
         line = self:removeComment(line:gsub(string.format("%s%s%s", string.char(239), string.char(187), string.char(191)), ""))
@@ -146,7 +138,6 @@ function ParserBNF:parse()
     end
     self:lexemesInTokenLines()
     self:extractLines()
-    self:generateFirst()
 end
 
 return ParserBNF
