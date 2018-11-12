@@ -1,4 +1,5 @@
 local flags = {}
+local singleFlags = {["--p"] = false}
 local filename = ""
 arg[0] = nil; arg[-1] = nil
 
@@ -15,7 +16,11 @@ for index, argument in pairs(arg) do
         flags[previousFlag] = argument
         previousFlag = nil
     elseif isFlag(argument) then
-        previousFlag = argument
+        if singleFlags[argument] ~= nil then
+            singleFlags[argument] = true
+        else
+            previousFlag = argument
+        end
     else
         filename = argument
     end
@@ -31,7 +36,7 @@ local function writeFile(extension)
     assert(generators[extension], string.format("Extension gived \"%s\" isn't valid", extension))
     local file = io.open(string.format("%s.%s", filename, extension), "w")
     local generator = require("models.business." .. generators[extension]):new(file, parserBNF.info, firstGenerator.first, parserBNF.follow)
-    generator:write(parserBNF.productions)
+    generator:write(singleFlags["--p"] and parserBNF.productions)
 end
 
 for flag, argument in pairs(flags) do
