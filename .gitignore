@@ -6,3 +6,4 @@
 #Ignore main executable file
 main
 *.exe
+lua5.3-lib/
