@@ -1,4 +1,3 @@
-unpack = unpack or table.unpack
 local ParserBNF = {}
 
 ParserBNF.__index = ParserBNF
@@ -74,12 +73,18 @@ function ParserBNF:getTokens(line)
                 lexeme = lexeme .. character
             end
         elseif character == "<" or openRule then
-            if openRule and character == ">" then
+            if not openRule and #lexeme > 0 then
+                table.insert(self.lexemes, lexeme)
+                openRule = true; lexeme = "<"
+            elseif openRule and character == ">" then
                 table.insert(self.lexemes, lexeme .. character)
                 openRule = false; lexeme = ""
             elseif not openRule then openRule = true; lexeme = lexeme .. character
             else lexeme = lexeme .. character
             end
+        elseif character == "|" then
+            table.insert(self.lexemes, lexeme .. character)
+            lexeme = ""
         elseif character ~= " " then
             lexeme = lexeme .. character
         elseif #lexeme > 0 then
@@ -96,19 +101,7 @@ end
 
 function ParserBNF:extractLines()
     for line, tokenLine in pairs(self.tokens) do
-        if tokenLine[1]:match("[\", \'].*[\", \']") then
-            if tokenLine[2] == "=" then
-                local name = string.sub(tokenLine[1], 2, #tokenLine[1] - 1)
-                self.info[name] = #tokenLine > 3 and {} or tokenLine[3]
-                if #tokenLine > 3 then
-                    for index = 3, #tokenLine do
-                        table.insert(self.info[name], tokenLine[index])
-                    end
-                end
-            else
-                error("When setting a info, a equal(=) symbol is needed")
-            end
-        elseif tokenLine[1]:match("<.*>") then
+        if tokenLine[1]:match("<.*>") then
             assert(tokenLine[2] == "::=", string.format("The symbol \"::=\" is needed to indicate a production. \"%s\" are given", tokenLine[2]))
             self.productions[tokenLine[1]] = {}
             local production = {}
@@ -124,6 +117,18 @@ function ParserBNF:extractLines()
             end
             if #production > 0 then table.insert(self.productions[tokenLine[1]], production) end
             if tokenLine[#tokenLine] == "|" then table.insert(self.productions[tokenLine[1]], self.empty) end
+        elseif tokenLine[1]:match("[\", \'].*[\", \']") then
+            if tokenLine[2] == "=" then
+                local name = string.sub(tokenLine[1], 2, #tokenLine[1] - 1)
+                self.info[name] = #tokenLine > 3 and {} or tokenLine[3]
+                if #tokenLine > 3 then
+                    for index = 3, #tokenLine do
+                        table.insert(self.info[name], tokenLine[index])
+                    end
+                end
+            else
+                error("When setting a info, a equal(=) symbol is needed")
+            end
         end
     end
     if not self.info["Start Symbol"] then error("Start Symbol not set") end

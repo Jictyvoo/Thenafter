@@ -11,6 +11,7 @@ This is a BNF parser to generate a First and Follow tables.
 </pre>
 
 * Then, will be generated a file with the table for the first and follow
+* WARNING -> The program is case sensitive
 
 ## Specifying the language generated
 
