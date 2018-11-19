@@ -14,24 +14,10 @@ function GenerateJava:new(filePointer, info, first, follow)
     return setmetatable(this, GenerateJava)
 end
 
-function GenerateJava:write(productions)
-    self.file:write("import java.util.HashSet;\nimport java.util.Arrays;\nimport java.util.ArrayList;\nimport java.util.HashMap;\nimport java.util.List;\n\n")
-    self.file:write([[
-public class FirstFollow{
-]])
-    for index, value in pairs(self.info) do
-        self.file:write(string.format("\tpublic final String %s;\n", index:gsub("%s+", "")))
-    end
-    self.file:write("\tprivate HashMap<String, HashSet<String>> first;\n\tprivate static FirstFollow instance;\n\n")
-    self.file:write([[
-    private FirstFollow(){
-]])
-    for index, value in pairs(self.info) do
-        self.file:write(string.format("\t\tthis.%s = \"%s\";\n", index:gsub("%s+", ""), value:gsub("\'", "")))
-    end
-    self.file:write("\t\tthis.first = new HashMap<>();\n")
-    for index, value in pairs(self.first) do
-        self.file:write(string.format("\t\tthis.first.put(\"%s\", %s", index:gsub("[<,>]", ""), "new HashSet<>(Arrays.asList("))
+function GenerateJava:writeHash(name, toWrite)
+    self.file:write(string.format("\t\tthis.%s = new HashMap<>();\n", name))
+    for index, value in pairs(toWrite) do
+        self.file:write(string.format("\t\tthis.%s.put(\"%s\", %s", name, index:gsub("[<,>]", ""), "new HashSet<>(Arrays.asList("))
         local first = true
         for production, _ in pairs(value) do
             production = production:gsub("\'", "")
@@ -44,6 +30,25 @@ public class FirstFollow{
         end
         self.file:write(")));\n")
     end
+end
+
+function GenerateJava:write(productions)
+    self.file:write("import java.util.HashSet;\nimport java.util.Arrays;\nimport java.util.ArrayList;\nimport java.util.HashMap;\nimport java.util.List;\n\n")
+    self.file:write([[
+public class FirstFollow{
+]])
+    for index, value in pairs(self.info) do
+        self.file:write(string.format("\tpublic final String %s;\n", index:gsub("%s+", "")))
+    end
+    self.file:write("\tprivate HashMap<String, HashSet<String>> first;\n\tprivate HashMap<String, HashSet<String>> follow;\n\tprivate static FirstFollow instance;\n\n")
+    self.file:write([[
+    private FirstFollow(){
+]])
+    for index, value in pairs(self.info) do
+        self.file:write(string.format("\t\tthis.%s = \"%s\";\n", index:gsub("%s+", ""), value:gsub("\'", "")))
+    end
+    self:writeHash("first", self.first)
+    self:writeHash("follow", self.follow)
     self.file:write("\t}\n\n")
     if productions then
         self.file:write([[

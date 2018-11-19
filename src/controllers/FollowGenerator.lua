@@ -8,7 +8,8 @@ function FollowGenerator:new(productions, first)
         productions = productions,
         producers = {},
         first = first,
-        follow = {}
+        follow = {},
+        concatenateList = {}
     }, FollowGenerator)
 end
 
@@ -26,20 +27,73 @@ function FollowGenerator:productedBy()
     end
 end
 
-function FollowGenerator:of(production)
+function FollowGenerator:concatenateTables(main, secondary)
+    if secondary then
+        for index, value in pairs(secondary) do
+            if index ~= "" then
+                main[index] = true
+            end
+        end
+    end
+    return main
+end
+
+function FollowGenerator:giveMeFirst(from)
+    if not from then return nil end
+    if from:match("<.*>") then
+        return self.first[from]
+    end
+    local newFirst = {}; newFirst[from] = true
+    return newFirst
+end
+
+function FollowGenerator:toConcatenate(main, secondary)
+    if not self.concatenateList[main] then self.concatenateList[main] = {} end
+    table.insert(self.concatenateList[main], secondary)
+end
+
+function FollowGenerator:of(production, hasToo)
     if self.follow[production] then return self.follow[production] end
-    self.follow[production] = {}
-    
+    self.follow[production] = self:concatenateTables({}, hasToo)
+    for key, _ in pairs(self.producers[production]) do
+        for count = 1, #self.productions[key] do
+            for index = 1, #self.productions[key][count] do
+                local value = self.productions[key][count][index]
+                if value == production then
+                    if index == #self.productions[key][count] then
+                        self:toConcatenate(self.follow[production], self:of(key))
+                    else
+                        self:toConcatenate(self.follow[production], self.first[production])
+                        if self.first[production][""] then
+                            local newFirst = self:giveMeFirst(self.productions[key][count][index])
+                            self:toConcatenate(self.follow[production], newFirst)
+                        end
+                    end
+                    index = #self.productions[key][count] + 1
+                end
+            end
+        end
+    end
+    return self.follow[production]
+end
+
+function FollowGenerator:concatenateAll()
+    for main, _ in pairs(self.concatenateList) do
+        for index, value in pairs(self.concatenateList[main]) do
+            self:concatenateTables(main, value)
+        end
+    end
 end
 
 function FollowGenerator:start(startSymbol)
     self:productedBy()
-    self.follow[startSymbol] = {"$"}
+    self:of(startSymbol, {["'$'"] = true})
     for index, value in pairs(self.producers) do
         for production, _ in pairs(value) do
             self:of(production)
         end
     end
+    self:concatenateAll(); self:concatenateAll()
 end
 
 return FollowGenerator
