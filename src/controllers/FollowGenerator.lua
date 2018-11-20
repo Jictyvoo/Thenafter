@@ -9,7 +9,8 @@ function FollowGenerator:new(productions, first)
         producers = {},
         first = first,
         follow = {},
-        concatenateList = {}
+        concatenateList = {},
+        startSymbol = nil
     }, FollowGenerator)
 end
 
@@ -55,6 +56,13 @@ end
 function FollowGenerator:of(production, hasToo)
     if self.follow[production] then return self.follow[production] end
     self.follow[production] = self:concatenateTables({}, hasToo)
+    if not self.producers[production] then
+        if production == self.startSymbol then
+            return self.follow[production]
+        else
+            error(string.format("Production %s is not used, please fix it", production))
+        end
+    end
     for key, _ in pairs(self.producers[production]) do
         for count = 1, #self.productions[key] do
             for index = 1, #self.productions[key][count] do
@@ -86,12 +94,11 @@ function FollowGenerator:concatenateAll()
 end
 
 function FollowGenerator:start(startSymbol)
+    self.startSymbol = startSymbol
     self:productedBy()
     self:of(startSymbol, {["'$'"] = true})
-    for index, value in pairs(self.producers) do
-        for production, _ in pairs(value) do
-            self:of(production)
-        end
+    for production, value in pairs(self.productions) do
+        self:of(production)
     end
     self:concatenateAll(); self:concatenateAll()
 end

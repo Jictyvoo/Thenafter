@@ -14,6 +14,15 @@ function GenerateJava:new(filePointer, info, first, follow)
     return setmetatable(this, GenerateJava)
 end
 
+function GenerateJava:writeGet(name)
+    self.file:write(string.format([[
+    public HashMap<String, HashSet<String>> get%s(){
+        return this.%s;
+    }
+
+]], name, string.lower(name)))
+end
+
 function GenerateJava:writeHash(name, toWrite)
     self.file:write(string.format("\t\tthis.%s = new HashMap<>();\n", name))
     for index, value in pairs(toWrite) do
@@ -80,11 +89,9 @@ public class FirstFollow{
         end
         self.file:write("\t\treturn productions;\n\t}\n\n")
     end
+    self:writeGet("First")
+    self:writeGet("Follow")
     self.file:write([[
-    public HashMap<String, HashSet<String>> getFirst(){
-        return this.first;
-    }
-
     public static FirstFollow getInstance(){
         if(instance == null){
             instance = new FirstFollow();
