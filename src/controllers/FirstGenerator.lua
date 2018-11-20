@@ -12,7 +12,7 @@ end
 
 function FirstGenerator:concatenateTables(main, secondary)
     for index, value in pairs(secondary) do
-        if index ~= "" then
+        if index ~= "''" then
             main[index] = true
         end
     end
@@ -30,7 +30,7 @@ function FirstGenerator:of(productionName)
             if production[count]:match("<.*>") then
                 local productionOf = self:of(production[count])
                 self:concatenateTables(self.first[productionName], productionOf)
-                if not productionOf[""] then count = #production + 1 end
+                if not productionOf["''"] then count = #production + 1 end
             else
                 local name = #production[count] > 0 and production[count] or "''"
                 self.first[productionName][name] = true

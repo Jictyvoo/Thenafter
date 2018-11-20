@@ -31,7 +31,7 @@ end
 function FollowGenerator:concatenateTables(main, secondary)
     if secondary then
         for index, value in pairs(secondary) do
-            if index ~= "" then
+            if index ~= "''" then
                 main[index] = true
             end
         end
@@ -72,7 +72,7 @@ function FollowGenerator:of(production, hasToo)
                         self:toConcatenate(self.follow[production], self:of(key))
                     else
                         self:toConcatenate(self.follow[production], self.first[production])
-                        if self.first[production][""] then
+                        if self.first[production]["''"] then
                             local newFirst = self:giveMeFirst(self.productions[key][count][index])
                             self:toConcatenate(self.follow[production], newFirst)
                         end
