@@ -70,12 +70,14 @@ function FollowGenerator:of(production, hasToo)
                 if value == production then
                     if index == #self.productions[key][count] then
                         self:toConcatenate(self.follow[production], self:of(key))
-                    else
-                        self:toConcatenate(self.follow[production], self.first[production])
-                        if self.first[production]["''"] then
-                            local newFirst = self:giveMeFirst(self.productions[key][count][index])
-                            self:toConcatenate(self.follow[production], newFirst)
+                    elseif index > 1 then
+                        self:toConcatenate(self.follow[production], self.first[key])
+                        if self.first[key]["''"] then
+                            self:toConcatenate(self.follow[production], self:of(key))
                         end
+                    else
+                        local newFirst = self:giveMeFirst(self.productions[key][count][index + 1])
+                        self:toConcatenate(self.follow[production], newFirst)
                     end
                     index = #self.productions[key][count] + 1
                 end

@@ -26,6 +26,7 @@ for index, argument in pairs(arg) do
         filename = argument
     end
 end
+if previousFlag then error(string.format("Flag %s without parameters", previousFlag)) end
 
 local parserBNF = require "controllers.ParserBNF":new(filename)
 parserBNF:parse()
