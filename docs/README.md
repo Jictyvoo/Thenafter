@@ -1,5 +1,9 @@
 # Thenafter
 
+> **Archived**
+> 
+> This project was reestructured and refactored in Dart-lang, see [thenafter-dart](https://github.com/Jictyvoo/thenafter-dart)
+
 This is a BNF parser to generate a First and Follow tables.
 
 ## How to use
